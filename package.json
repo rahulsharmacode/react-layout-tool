@@ -1,0 +1,21 @@
+{
+  "name": "react-layout-tool",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module", 
+  "bin": {
+    "create-react-structure": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
+  },
+
+  "keywords": ["react", "folder", "structure", "generator"],
+  "author": "Rahul Sharma",
+  "license": "ISC",
+  "description": "react-layout-tool",
+  "dependencies": {
+    "inquirer": "^10.1.8"
+  }
+}
