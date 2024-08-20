@@ -15,6 +15,14 @@
   "author": "Rahul Sharma",
   "license": "ISC",
   "description": "react-layout-tool",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rahulsharmacode/react-layout-tool"
+  },
+  "bugs": {
+    "url": "https://github.com/rahulsharmacode/react-layout-tool/issues"
+  },
+  "homepage": "https://rahulsharma.com.np/npm/react-layout-tool", 
   "dependencies": {
     "inquirer": "^10.1.8"
   }
