@@ -15,49 +15,65 @@ A CLI tool to generate a standardized folder structure for React applications wi
 ```bash
 ├── public
 │   ├── assets
-│   │   └── logo.png
-│   ├── css
-│   │   └── main.css
+│   │   ├── css
+│   │   │   └── main.css
+│   │   ├── icon
+│   │   │   └── index.icon.jsx
+│   │   ├── constant
+│   │   │   └── index.constant.jsx
+│   │   ├── images
 ├── src
 │   ├── pages
 │   │   ├── dashboard
+│   │   │   ├── index.css
 │   │   │   └── index.jsx
-│   │   └── home
+│   │   ├── home
+│   │       ├── index.css
 │   │       └── index.jsx
+│   ├── services
+│   │   ├── api.services.js
+│   │   └── index.services.js
+│   ├── ui
+│   │   ├── external
+│   │   │   ├── components
+│   │   │   │   └── button
+│   │   │   │       ├── Button.css
+│   │   │   │       └── Button.jsx
+│   │   ├── internal
+│   │   │   ├── components
+│   │   │   │   ├── footer
+│   │   │   │   │   ├── index.css
+│   │   │   │   │   └── index.jsx
+│   │   │   │   ├── header
+│   │   │   │   │   ├── index.css
+│   │   │   │   │   └── index.jsx
+│   │   │   │   ├── sidebar
+│   │   │   │       ├── index.css
+│   │   │   │       └── index.jsx
 │   ├── utils
-│   │   ├── components
-│   │   │   ├── header
-│   │   │   │   └── index.jsx
-│   │   │   ├── footer
-│   │   │   │   ├── index.jsx
-│   │   │   │   └── index.function.jsx
-│   │   │   ├── sidebar
-│   │   │   │   └── index.jsx
 │   │   ├── helper
-│   │   │   └── index.helper.jsx
+│   │   │   └── index.helper.js
 │   │   ├── hook
 │   │   │   └── index.hook.jsx
 │   │   ├── interface
-│   │   │   └── index.interface.jsx
-│   │   ├── private
-│   │   │   └── index.private.jsx
-│   │   ├── services
-│   │   │   ├── api.private.jsx
-│   │   │   └── index.private.jsx
+│   │   │   ├── form.interface.js
+│   │   │   ├── index.enum.js
+│   │   │   └── index.interface.js
+│   │   ├── layout
+│   │   │   └── index.layout.jsx
 │   │   ├── states
-│   │   │   ├── atom.jsx
-│   │   │   └── selector.jsx
+│   │       ├── atom.js
+│   │       └── selector.js
 
 
-## Installation Step 1
+
+## Installation Steps
 
 To install the React Layout Tool package, use the following command:
 
 step 1 :
-```bash
 npm install react-layout-tool
 
 step 2 :
-```bash
 npx react-layout-tool
 

@@ -15,7 +15,7 @@ function createStructure({ extension, style }) {
     /* ========== Create the folder if it doesn't exist ========== */
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
-      console.log(`Created folder: ${folderPath}`);
+      // console.log(`Created folder: ${folderPath}`);
     }
 
     /* ========== Create the files in the folder ========== */
@@ -44,7 +44,7 @@ function createStructure({ extension, style }) {
         if (style === ".scss") {
           originalFileName = originalFileName.replace(/\.css$/, ".css");
         }
-
+        // console.log(contents[originalFileName] , originalFileName , filePath ,  newFileName ,"contents[originalFileName]")
         const content = contents[originalFileName] || "";
         fs.writeFileSync(
           filePath,
