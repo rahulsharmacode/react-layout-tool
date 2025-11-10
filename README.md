@@ -1,4 +1,5 @@
 # React Layout Tool
+
 `react-layout-tool`
 
 A CLI tool to generate a standardized folder structure for React applications with pre-defined components, pages, utilities, and styles. This tool allows developers to quickly scaffold a React project with customizable file extensions and styles.
@@ -10,10 +11,11 @@ A CLI tool to generate a standardized folder structure for React applications wi
 - Configurable Extensions: Choose between .jsx and .tsx file extensions to match your project's needs.
 - Style Options: Select between .css and .scss stylesheets for your project.
 
-
 ## Folder Structure
+
 ```bash
 ├── public
+├── src
 │   ├── assets
 │   │   ├── css
 │   │   │   └── main.css
@@ -22,7 +24,6 @@ A CLI tool to generate a standardized folder structure for React applications wi
 │   │   ├── constant
 │   │   │   └── index.constant.jsx
 │   │   ├── images
-├── src
 │   ├── pages
 │   │   ├── dashboard
 │   │   │   ├── index.css
@@ -77,3 +78,4 @@ npm install react-layout-tool
 step 2 :
 npx react-layout-tool
 
+```
