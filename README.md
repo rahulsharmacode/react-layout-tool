@@ -4,6 +4,18 @@
 
 A CLI tool to generate a standardized folder structure for React applications with pre-defined components, pages, utilities, and styles. This tool allows developers to quickly scaffold a React project with customizable file extensions and styles.
 
+## Install and Execute
+
+```bash
+npm install react-layout-tool
+```
+
+Run executable command
+
+```bash
+npx react-layout-tool
+```
+
 ## Features
 
 - Customizable Folder Structure: Automatically creates a well-organized folder structure tailored for React projects.
