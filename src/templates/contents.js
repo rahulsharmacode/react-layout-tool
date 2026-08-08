@@ -1128,7 +1128,7 @@ export default {
 export function getPostcssConfig() {
   return `export default {
   plugins: {
-    tailwindcss: {},
+    '@tailwindcss/postcss': {},
     autoprefixer: {},
   },
 }

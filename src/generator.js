@@ -51,6 +51,7 @@ export function generateStructure(config) {
         pkg.scripts['dev'] = pkg.scripts['dev'] || 'vite';
         pkg.scripts['build'] = pkg.scripts['build'] || (isTS ? 'tsc && vite build' : 'vite build');
         pkg.scripts['preview'] = pkg.scripts['preview'] || 'vite preview';
+        pkg.type = 'module';
       }
       fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
       console.log(`  ${green('✔')} Configured runner scripts in package.json.`);
@@ -161,7 +162,7 @@ export function generateStructure(config) {
   
   if (styling === 'tailwind') {
     console.log(`  1. Install Tailwind dependencies if you haven't:`);
-    console.log(cyan('     npm install -D tailwindcss postcss autoprefixer && npx tailwindcss init -p'));
+    console.log(cyan('     npm install -D tailwindcss @tailwindcss/postcss postcss autoprefixer'));
   }
   
   if (routing) {
@@ -247,6 +248,7 @@ function installDependencies(config) {
 
   if (config.styling === 'tailwind') {
     if (!existingDeps.has('tailwindcss')) devDepsToInstall.push('tailwindcss');
+    if (!existingDeps.has('@tailwindcss/postcss')) devDepsToInstall.push('@tailwindcss/postcss');
     if (!existingDeps.has('postcss')) devDepsToInstall.push('postcss');
     if (!existingDeps.has('autoprefixer')) devDepsToInstall.push('autoprefixer');
   } else if (config.styling === 'scss') {
