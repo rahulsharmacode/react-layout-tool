@@ -1,14 +1,15 @@
 {
   "name": "react-layout-tool",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "create-react-structure": "./index.js"
+    "create-react-structure": "./index.js",
+    "react-layout-tool": "./index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js"
+    "start": "node index.js"
   },
   "keywords": [
     "react",
