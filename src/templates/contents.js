@@ -82,18 +82,14 @@ ReactDOM.createRoot(document.getElementById('root')${isTS ? '!' : ''}).render(
 
 export function getIndexCss(styling) {
   if (styling === 'tailwind') {
-    return `@tailwind base;
-@tailwind components;
-@tailwind utilities;
+    return `@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-slate-50 text-slate-900 antialiased transition-colors duration-200;
-  }
-  
-  body.dark {
-    @apply bg-slate-950 text-slate-50;
-  }
+body {
+  @apply bg-slate-50 text-slate-900 antialiased transition-colors duration-200;
+}
+
+body.dark {
+  @apply bg-slate-950 text-slate-50;
 }
 `;
   }
