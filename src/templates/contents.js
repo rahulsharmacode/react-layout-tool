@@ -1,5 +1,5 @@
 /**
- * Dynamic content generator for React files.
+ * Dynamic content generator for React and Next.js files.
  * Generates boilerplate code with educational best practice headers.
  */
 
@@ -125,9 +125,10 @@ body {
 }
 
 export function getComponentContent(name, config) {
-  const { language, styling, stateManagement } = config;
+  const { framework, language, styling, stateManagement } = config;
   const isTS = language === 'ts';
   const isTailwind = styling === 'tailwind';
+  const isNext = framework === 'next';
   
   let imports = `import React from 'react';\n`;
   if (!isTailwind) {
@@ -136,10 +137,10 @@ export function getComponentContent(name, config) {
   
   let stateHooks = '';
   if (stateManagement === 'zustand') {
-    imports += `import { useAppStore } from '../../store/useAppStore';\n`;
+    imports += `import { useAppStore } from '${isNext ? '@/store/useAppStore' : '../../store/useAppStore'}';\n`;
     stateHooks = `  const { count, increment } = useAppStore();\n`;
   } else if (stateManagement === 'redux') {
-    imports += `import { useSelector, useDispatch } from 'react-redux';\nimport { increment } from '../../store/slices/counterSlice';\n`;
+    imports += `import { useSelector, useDispatch } from 'react-redux';\nimport { increment } from '${isNext ? '@/store/slices/counterSlice' : '../../store/slices/counterSlice'}';\n`;
     stateHooks = `  const count = useSelector((state${isTS ? ': any' : ''}) => state.counter.value);\n  const dispatch = useDispatch();\n`;
   }
 
@@ -151,23 +152,17 @@ export function getComponentContent(name, config) {
     filename = `src/layouts/MainLayout.${isTS ? 'tsx' : 'jsx'}`;
     explanation = `Layout components define the structural grid/frames of the page (header, footer, sidebars) and take children. Separating structural grids from pages allows pages to share layout configurations seamlessly.`;
     
-    // Add page layout headers/imports
-    imports += `import Header from '../components/common/Header';\nimport Footer from '../components/common/Footer';\n`;
-    
+    // In Next, layouts don't need header/footer subcomponents if layout.tsx handles them, but let's provide standard wrapping.
     jsx = isTailwind
       ? `    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
-      <Header />
       <main className="flex-grow max-w-7xl mx-auto px-4 py-8 w-full">
         {children}
       </main>
-      <Footer />
     </div>`
       : `    <div className="app-container">
-      <Header />
       <main className="main-content">
         {children}
       </main>
-      <Footer />
     </div>`;
 
     const propsInterface = isTS ? 'interface MainLayoutProps {\n  children: React.ReactNode;\n}\n\n' : '';
@@ -236,11 +231,14 @@ export function getComponentContent(name, config) {
     explanation = `Global UI component. Reusable components should be highly customizable, pure, and styled using layout styles. They should not rely on feature business states directly.`;
     const props = isTS ? 'interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {\n  variant?: "primary" | "secondary";\n}\n\n' : '';
     const componentSig = isTS ? `React.FC<ButtonProps>` : '';
+    const clientDirective = (isNext && stateManagement) ? `'use client';\n\n` : '';
     
-    return `${getHeader(`src/components/ui/Button.${isTS ? 'tsx' : 'jsx'}`, explanation)}${imports}\n${props}const Button: ${componentSig} = ({ children, variant = 'primary', className = '', ...props }) => {\n  const baseStyle = '${isTailwind ? 'px-4 py-2 rounded-md font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2' : 'btn'}';\n  const variantStyle = variant === 'primary' \n    ? '${isTailwind ? 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500' : 'btn-primary'}'\n    : '${isTailwind ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'btn-secondary'}';\n\n  return (\n    <button className={\`\${baseStyle} \${variantStyle} \${className}\`} {...props}>\n      {children}\n    </button>\n  );\n};\n\nexport default Button;\n`;
+    return `${clientDirective}${getHeader(`src/components/ui/Button.${isTS ? 'tsx' : 'jsx'}`, explanation)}${imports}\n${props}const Button: ${componentSig} = ({ children, variant = 'primary', className = '', ...props }) => {\n  const baseStyle = '${isTailwind ? 'px-4 py-2 rounded-md font-medium text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2' : 'btn'}';\n  const variantStyle = variant === 'primary' \n    ? '${isTailwind ? 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500' : 'btn-primary'}'\n    : '${isTailwind ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'btn-secondary'}';\n\n  return (\n    <button className={\`\${baseStyle} \${variantStyle} \${className}\`} {...props}>\n      {children}\n    </button>\n  );\n};\n\nexport default Button;\n`;
   } else if (name === 'LoginForm') {
     filename = `src/features/auth/components/LoginForm.${isTS ? 'tsx' : 'jsx'}`;
     explanation = `Feature-specific UI Component. Keeping components local to features (e.g. auth) avoids bloating the global 'src/components' list and keeps feature scopes fully modular.`;
+    const clientDirective = isNext ? `'use client';\n\n` : '';
+    
     jsx = isTailwind
       ? `    <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-100 dark:border-slate-700">
       <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white">Sign In</h2>
@@ -303,6 +301,7 @@ export function getComponentContent(name, config) {
       : `    <div className="activity-card"><h3>Activity</h3><ul><li>User signed up</li></ul></div>`;
   } else {
     explanation = `Fallback modular UI component.`;
+    const clientDirective = (isNext && stateManagement) ? `'use client';\n\n` : '';
     jsx = isTailwind
       ? `    <div className="p-4 bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-100 dark:border-slate-700">
       <h3 className="text-lg font-bold">${name} Component</h3>
@@ -323,6 +322,7 @@ export function getComponentContent(name, config) {
         <button onClick={() => ${stateManagement === 'zustand' ? 'increment()' : 'dispatch(increment())'}}>Increment</button>
       </div>` : ''}
     </div>`;
+    return `${clientDirective}${getHeader(filename, explanation)}${imports}\nconst ${name}${isTS ? ': React.FC' : ''} = () => {\n${stateHooks}\n  return (\n${jsx}\n  );\n};\n\nexport default ${name};\n`;
   }
 
   return `${getHeader(filename, explanation)}${imports}\nconst ${name}${isTS ? ': React.FC' : ''} = () => {\n${stateHooks}\n  return (\n${jsx}\n  );\n};\n\nexport default ${name};\n`;
@@ -558,6 +558,181 @@ export function getPageContent(name, config) {
   return `${getHeader(`src/pages/${name}.${isTS ? 'tsx' : 'jsx'}`, explanation)}${imports}\nconst ${name}${isTS ? ': React.FC' : ''} = () => {\n  return (\n${body}\n  );\n};\n\nexport default ${name};\n`;
 }
 
+export function getNextLayoutContent(config) {
+  const { language, styling, stateManagement } = config;
+  const isTS = language === 'ts';
+  const isTailwind = styling === 'tailwind';
+  const explanation = `This is the root layout for the Next.js App Router. It defines the base HTML structure, document fonts, and houses root-level provider wraps (e.g. state context wrappers).`;
+
+  let imports = `import React from 'react';\nimport './globals.${styling === 'tailwind' ? 'css' : styling}';\n`;
+  
+  if (stateManagement === 'context') {
+    imports += `import { ThemeProvider } from '../context/ThemeContext';\n`;
+  } else if (stateManagement === 'redux') {
+    imports += `import StoreProvider from '../store/StoreProvider';\n`;
+  }
+
+  let wrapStart = '';
+  let wrapEnd = '';
+
+  if (stateManagement === 'context') {
+    wrapStart = '<ThemeProvider>';
+    wrapEnd = '</ThemeProvider>';
+  } else if (stateManagement === 'redux') {
+    wrapStart = '<StoreProvider>';
+    wrapEnd = '</StoreProvider>';
+  }
+
+  const layoutSig = isTS ? 'children: React.ReactNode' : 'children';
+
+  return `${getHeader(`src/app/layout.${isTS ? 'tsx' : 'jsx'}`, explanation)}${imports}
+export const metadata = {
+  title: 'Next.js Best Practices App',
+  description: 'Scaffolded using react-layout-tool',
+};
+
+export default function RootLayout({
+  children,
+}${isTS ? `: { ${layoutSig} }` : ''}) {
+  return (
+    <html lang="en">
+      <body className="${isTailwind ? 'antialiased' : ''}">
+        ${wrapStart ? `${wrapStart}{children}${wrapEnd}` : '{children}'}
+      </body>
+    </html>
+  );
+}
+`;
+}
+
+export function getNextPageContent(name, config) {
+  const { language, styling, stateManagement } = config;
+  const isTS = language === 'ts';
+  const isTailwind = styling === 'tailwind';
+  
+  // Set up imports and state setups
+  let imports = `import React from 'react';\n`;
+  let clientDirective = '';
+  let stateHooks = '';
+
+  const isDashboard = name === 'Dashboard';
+  const pageRoute = isDashboard ? 'src/app/dashboard/page' : 'src/app/page';
+
+  if (isDashboard && stateManagement) {
+    clientDirective = `'use client';\n\n`;
+    if (stateManagement === 'zustand') {
+      imports += `import { useAppStore } from '@/store/useAppStore';\n`;
+      stateHooks = `  const { count, increment, decrement } = useAppStore();\n`;
+    } else if (stateManagement === 'redux') {
+      imports += `import { useSelector, useDispatch } from 'react-redux';\nimport { increment, decrement } from '@/store/slices/counterSlice';\n`;
+      stateHooks = `  const count = useSelector((state${isTS ? ': any' : ''}) => state.counter.value);\n  const dispatch = useDispatch();\n`;
+    }
+  }
+
+  const explanation = `Page view for the Next.js App Router. By default, Next.js components are Server Components. If client side states or handlers (e.g. hooks, stores) are needed, mark the file with 'use client' directive.`;
+
+  let jsx = '';
+  if (isDashboard) {
+    const stateJsx = stateManagement
+      ? isTailwind
+        ? `\n      <div className="mt-8 p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl max-w-md shadow-sm">
+        <h3 className="font-semibold text-lg mb-2">State Management Demo</h3>
+        <p className="text-sm text-slate-500 mb-4">Powered by ${stateManagement === 'zustand' ? 'Zustand' : 'Redux Toolkit'}</p>
+        <div className="flex items-center gap-4">
+          <button onClick={() => ${stateManagement === 'zustand' ? 'decrement()' : 'dispatch(decrement())'}} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded">-</button>
+          <span className="font-bold text-xl w-12 text-center">{count}</span>
+          <button onClick={() => ${stateManagement === 'zustand' ? 'increment()' : 'dispatch(increment())'}} className="px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded">+</button>
+        </div>
+      </div>`
+        : `\n      <div className="state-demo-box">
+        <h3>State Management Demo</h3>
+        <p>Powered by ${stateManagement === 'zustand' ? 'Zustand' : 'Redux Toolkit'}</p>
+        <div className="controls">
+          <button onClick={() => ${stateManagement === 'zustand' ? 'decrement()' : 'dispatch(decrement())'}}>-</button>
+          <span className="count">{count}</span>
+          <button onClick={() => ${stateManagement === 'zustand' ? 'increment()' : 'dispatch(increment())'}}>+</button>
+        </div>
+      </div>`
+      : '';
+
+    jsx = isTailwind
+      ? `    <div className="p-8 space-y-6">
+      <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Dashboard</h1>
+      <p className="text-slate-500 dark:text-slate-400">Manage your application metrics and settings here.</p>${stateJsx}
+    </div>`
+      : `    <div className="dashboard-page" style={{ padding: '2rem' }}>
+      <h1>Dashboard</h1>
+      <p>Manage your application metrics and settings here.</p>${stateJsx}
+    </div>`;
+  } else {
+    // Root Home Page
+    jsx = isTailwind
+      ? `    <main className="min-h-screen p-8 max-w-7xl mx-auto space-y-6">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 md:p-12 text-white shadow-lg">
+        <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Welcome to Your Next.js App</h1>
+        <p className="text-lg text-indigo-100 max-w-2xl mb-6">
+          This project is scaffolded with Next.js App Router best practices, featuring complete structure separation.
+        </p>
+        <div className="flex gap-4">
+          <a href="/dashboard" className="px-5 py-2.5 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-indigo-50 transition-colors">
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-100 dark:border-slate-700">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Folder Structure</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            A standardized layout configured specifically for easy scaling and domain separation.
+          </p>
+        </div>
+        <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-100 dark:border-slate-700">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Path Aliases</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Absolute imports enabled with prefixing like \`@/components\` for clean import statements.
+          </p>
+        </div>
+        <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-100 dark:border-slate-700">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Best Practices</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Optimized for Next.js App Router, separating Client and Server components.
+          </p>
+        </div>
+      </div>
+    </main>`
+      : `    <main className="home-page" style={{ padding: '2rem' }}>
+      <h1>Welcome to Your Next.js App</h1>
+      <p>This project is scaffolded using optimized folder structures and developer best practices.</p>
+      <a href="/dashboard" className="btn btn-primary">Go to Dashboard</a>
+    </main>`;
+  }
+
+  return `${clientDirective}${getHeader(`${pageRoute}.${isTS ? 'tsx' : 'jsx'}`, explanation)}${imports}
+export default function Page() {
+${stateHooks}  return (
+${jsx}
+  );
+}
+`;
+}
+
+export function getStoreProviderContent({ language }) {
+  const isTS = language === 'ts';
+  const explanation = `In the Next.js App Router, Redux Providers must be Client Components ('use client') because they rely on React Context. Standard practice dictates wrapping the 'Provider' wrapper in a dedicated client component file.`;
+
+  return `'use client';\n\n${getHeader(`src/store/StoreProvider.${isTS ? 'tsx' : 'jsx'}`, explanation)}import React from 'react';
+import { Provider } from 'react-redux';
+import { store } from './index';
+
+export default function StoreProvider({
+  children,
+}${isTS ? ': { children: React.ReactNode }' : ''}) {
+  return <Provider store={store}>{children}</Provider>;
+}
+`;
+}
+
 export function getHookContent(name, { language }) {
   const isTS = language === 'ts';
   let explanation = '';
@@ -613,7 +788,7 @@ export function getServiceContent({ language, name }) {
   const filename = isAuth ? `src/features/auth/services/authApi.${isTS ? 'ts' : 'js'}` : `src/services/api.${isTS ? 'ts' : 'js'}`;
 
   if (isAuth) {
-    return `${getHeader(filename, explanation)}import { api } from '../../../services/api';
+    return `${getHeader(filename, explanation)}import { api } from '${isAuth ? '../../../services/api' : 'api'}';
 
 export const authApi = {
   async login(credentials${isTS ? ': any' : ''}) {
@@ -688,12 +863,14 @@ export const cn = (...classes${isTS ? ': any[]' : ''}) => {
 `;
 }
 
-export function getZustandContent({ language }) {
+export function getZustandContent({ framework, language }) {
   const isTS = language === 'ts';
+  const isNext = framework === 'next';
+  const clientDirective = isNext ? `'use client';\n\n` : '';
   const explanation = `Global State Store. Uses lightweight store setups for sharing domain matrices across non-nested visual components.`;
   
   if (isTS) {
-    return `${getHeader('src/store/useAppStore.ts', explanation)}import { create } from 'zustand';
+    return `${clientDirective}${getHeader('src/store/useAppStore.ts', explanation)}import { create } from 'zustand';
 
 interface AppState {
   count: number;
@@ -711,7 +888,7 @@ export const useAppStore = create<AppState>((set) => ({
 `;
   }
   
-  return `${getHeader('src/store/useAppStore.js', explanation)}import { create } from 'zustand';
+  return `${clientDirective}${getHeader('src/store/useAppStore.js', explanation)}import { create } from 'zustand';
 
 export const useAppStore = create((set) => ({
   count: 0,
@@ -768,12 +945,14 @@ export function getReduxSliceContent({ language }) {
   return sliceCode;
 }
 
-export function getContextContent({ language }) {
+export function getContextContent({ framework, language }) {
   const isTS = language === 'ts';
+  const isNext = framework === 'next';
+  const clientDirective = isNext ? `'use client';\n\n` : '';
   const explanation = `React Context Provider. Promotes theme state sharing across deep trees without props-drilling.`;
   
   if (isTS) {
-    return `${getHeader('src/context/ThemeContext.tsx', explanation)}import React, { createContext, useContext, useState, useEffect } from 'react';
+    return `${clientDirective}${getHeader('src/context/ThemeContext.tsx', explanation)}import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -814,7 +993,7 @@ export const useTheme = () => {
 `;
   }
 
-  return `${getHeader('src/context/ThemeContext.jsx', explanation)}import React, { createContext, useContext, useState, useEffect } from 'react';
+  return `${clientDirective}${getHeader('src/context/ThemeContext.jsx', explanation)}import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
@@ -874,7 +1053,7 @@ export function getConstantsContent({ language }) {
   const isTS = language === 'ts';
   const explanation = `Central configuration values and environment variables. Centralizing settings keeps API URLs, timeouts, and page bounds robust and consistent.`;
   
-  return `${getHeader(`src/config/constants.${isTS ? 'ts' : 'js'}`, explanation)}export const API_URL = process.env.REACT_APP_API_URL || 'https://api.example.com';
+  return `${getHeader(`src/config/constants.${isTS ? 'ts' : 'js'}`, explanation)}export const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.REACT_APP_API_URL || 'https://api.example.com';
 export const APP_TITLE = 'React Best Practices App';
 
 export const ROUTES = {
@@ -918,6 +1097,7 @@ export function getTailwindConfig(isTS) {
 export default {
   content: [
     "./index.html",
+    "./pages/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: 'class',
@@ -978,12 +1158,11 @@ export function getTsConfig() {
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
 
     /* Linting */
     "strict": true,
@@ -997,22 +1176,8 @@ export function getTsConfig() {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-`;
-}
-
-export function getTsconfigNodeConfig() {
-  return `{
-  "compilerOptions": {
-    "composite": true,
-    "skipLibCheck": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
-  },
-  "include": ["vite.config.ts"]
+  "include": ["src", "next-env.d.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
 `;
 }

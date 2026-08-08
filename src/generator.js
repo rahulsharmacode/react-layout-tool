@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 import { getStructure } from './templates/structures.js';
 import * as contents from './templates/contents.js';
 
@@ -42,6 +43,15 @@ export function generateStructure(config) {
         break;
       case 'main':
         fileContent = contents.getMainContent(config);
+        break;
+      case 'next-layout':
+        fileContent = contents.getNextLayoutContent(config);
+        break;
+      case 'next-page':
+        fileContent = contents.getNextPageContent(name, config);
+        break;
+      case 'store-provider':
+        fileContent = contents.getStoreProviderContent(config);
         break;
       case 'style':
         fileContent = name === 'index' 
@@ -130,4 +140,129 @@ export function generateStructure(config) {
     console.log(gray(`     // Inside defineConfiguration resolve.alias: { '@': path.resolve(__dirname, './src') }`));
   }
   console.log('');
+
+  // Auto install dependencies if selected
+  if (config.installDeps) {
+    installDependencies(config);
+  }
+}
+
+function detectPackageManager() {
+  if (fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml'))) return 'pnpm';
+  if (fs.existsSync(path.join(process.cwd(), 'yarn.lock'))) return 'yarn';
+  if (fs.existsSync(path.join(process.cwd(), 'bun.lockb'))) return 'bun';
+  return 'npm';
+}
+
+function installDependencies(config) {
+  const pm = detectPackageManager();
+  const pkgPath = path.join(process.cwd(), 'package.json');
+  
+  // ANSI colors
+  const boldColor = (str) => `\x1b[1m${str}\x1b[22m`;
+  const cyanColor = (str) => `\x1b[36m${str}\x1b[39m`;
+  const redColor = (str) => `\x1b[31m${str}\x1b[39m`;
+  const greenColor = (str) => `\x1b[32m${str}\x1b[39m`;
+
+  // 1. Initialize package.json if not present
+  if (!fs.existsSync(pkgPath)) {
+    console.log(cyanColor(`\n📦 package.json not found. Initializing project using ${pm}...`));
+    const initCmd = pm === 'yarn' ? 'yarn init -y' : `${pm} init -y`;
+    try {
+      execSync(initCmd, { stdio: 'inherit' });
+    } catch (e) {
+      console.error(redColor(`❌ Failed to initialize package.json: ${e.message}`));
+      return;
+    }
+  }
+
+  // 2. Read package.json to filter already installed dependencies
+  let existingDeps = new Set();
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    Object.keys(pkg.dependencies || {}).forEach(d => existingDeps.add(d));
+    Object.keys(pkg.devDependencies || {}).forEach(d => existingDeps.add(d));
+  } catch (e) {}
+
+  const depsToInstall = [];
+  const devDepsToInstall = [];
+
+  // Define required packages based on configuration
+  if (config.framework === 'next') {
+    if (!existingDeps.has('next')) depsToInstall.push('next');
+    if (!existingDeps.has('react')) depsToInstall.push('react');
+    if (!existingDeps.has('react-dom')) depsToInstall.push('react-dom');
+    
+    if (config.language === 'ts') {
+      if (!existingDeps.has('typescript')) devDepsToInstall.push('typescript');
+      if (!existingDeps.has('@types/react')) devDepsToInstall.push('@types/react');
+      if (!existingDeps.has('@types/react-dom')) devDepsToInstall.push('@types/react-dom');
+      if (!existingDeps.has('@types/node')) devDepsToInstall.push('@types/node');
+    }
+  } else if (config.framework === 'react') {
+    if (!existingDeps.has('react')) depsToInstall.push('react');
+    if (!existingDeps.has('react-dom')) depsToInstall.push('react-dom');
+    
+    if (config.language === 'ts') {
+      if (!existingDeps.has('typescript')) devDepsToInstall.push('typescript');
+      if (!existingDeps.has('@types/react')) devDepsToInstall.push('@types/react');
+      if (!existingDeps.has('@types/react-dom')) devDepsToInstall.push('@types/react-dom');
+    }
+  }
+
+  if (config.styling === 'tailwind') {
+    if (!existingDeps.has('tailwindcss')) devDepsToInstall.push('tailwindcss');
+    if (!existingDeps.has('postcss')) devDepsToInstall.push('postcss');
+    if (!existingDeps.has('autoprefixer')) devDepsToInstall.push('autoprefixer');
+  } else if (config.styling === 'scss') {
+    if (!existingDeps.has('sass')) devDepsToInstall.push('sass');
+  }
+
+  if (config.routing) {
+    if (!existingDeps.has('react-router-dom')) depsToInstall.push('react-router-dom');
+  }
+
+  if (config.stateManagement === 'zustand') {
+    if (!existingDeps.has('zustand')) depsToInstall.push('zustand');
+  } else if (config.stateManagement === 'redux') {
+    if (!existingDeps.has('@reduxjs/toolkit')) depsToInstall.push('@reduxjs/toolkit');
+    if (!existingDeps.has('react-redux')) depsToInstall.push('react-redux');
+  }
+
+  // 3. Perform installations
+  if (depsToInstall.length > 0) {
+    console.log(cyanColor(`\n🚀 Installing dependencies: ${boldColor(depsToInstall.join(', '))}...`));
+    const installCmd = getInstallCmd(pm, depsToInstall, false);
+    try {
+      execSync(installCmd, { stdio: 'inherit' });
+      console.log(greenColor(`  ✔ Dependencies installed successfully.`));
+    } catch (e) {
+      console.error(redColor(`❌ Dependency installation failed: ${e.message}`));
+    }
+  }
+
+  if (devDepsToInstall.length > 0) {
+    console.log(cyanColor(`\n🚀 Installing devDependencies: ${boldColor(devDepsToInstall.join(', '))}...`));
+    const installCmd = getInstallCmd(pm, devDepsToInstall, true);
+    try {
+      execSync(installCmd, { stdio: 'inherit' });
+      console.log(greenColor(`  ✔ devDependencies installed successfully.`));
+    } catch (e) {
+      console.error(redColor(`❌ devDependency installation failed: ${e.message}`));
+    }
+  }
+}
+
+function getInstallCmd(pm, list, isDev) {
+  const items = list.join(' ');
+  if (pm === 'yarn') {
+    return isDev ? `yarn add -D ${items}` : `yarn add ${items}`;
+  }
+  if (pm === 'pnpm') {
+    return isDev ? `pnpm add -D ${items}` : `pnpm add ${items}`;
+  }
+  if (pm === 'bun') {
+    return isDev ? `bun add -d ${items}` : `bun add ${items}`;
+  }
+  return isDev ? `npm install -D ${items}` : `npm install ${items}`;
 }

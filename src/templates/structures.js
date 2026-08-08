@@ -4,12 +4,13 @@
  */
 
 export function getStructure(config) {
-  const { layout, language, styling, routing, stateManagement, pathAliases } = config;
+  const { framework, layout, language, styling, routing, stateManagement, pathAliases } = config;
   
   const isTS = language === 'ts';
   const cmpExt = isTS ? 'tsx' : 'jsx';
   const codeExt = isTS ? 'ts' : 'js';
   const styleExt = styling === 'tailwind' ? null : styling;
+  const isNext = framework === 'next';
 
   const files = {};
 
@@ -17,7 +18,9 @@ export function getStructure(config) {
   if (pathAliases) {
     if (isTS) {
       files['tsconfig.json'] = { type: 'config', name: 'tsconfig' };
-      files['tsconfig.node.json'] = { type: 'config', name: 'tsconfig.node' };
+      if (!isNext) {
+        files['tsconfig.node.json'] = { type: 'config', name: 'tsconfig.node' };
+      }
     } else {
       files['jsconfig.json'] = { type: 'config', name: 'jsconfig' };
     }
@@ -30,11 +33,18 @@ export function getStructure(config) {
   }
 
   // 3. BASE ENTRY FILES
-  files[`src/main.${cmpExt}`] = { type: 'main' };
-  files[`src/App.${cmpExt}`] = { type: 'app' };
-  
   const mainStyleExt = styling === 'tailwind' ? 'css' : styling;
-  files[`src/index.${mainStyleExt}`] = { type: 'style', name: 'index' };
+  if (isNext) {
+    // Next.js App Router Entries
+    files[`src/app/layout.${cmpExt}`] = { type: 'next-layout' };
+    files[`src/app/page.${cmpExt}`] = { type: 'next-page' };
+    files[`src/app/globals.${mainStyleExt}`] = { type: 'style', name: 'globals' };
+  } else {
+    // Standard React Entries
+    files[`src/main.${cmpExt}`] = { type: 'main' };
+    files[`src/App.${cmpExt}`] = { type: 'app' };
+    files[`src/index.${mainStyleExt}`] = { type: 'style', name: 'index' };
+  }
 
   // Helper to add component and optional styles
   const addComponent = (pathPrefix, name) => {
@@ -52,8 +62,8 @@ export function getStructure(config) {
     }
   };
 
-  // 4. ROUTING MODULE (Best Practice: Centralized Routes Setup)
-  if (routing) {
+  // 4. ROUTING MODULE (Best Practice: Centralized Routes Setup - React only, Next handles it)
+  if (routing && !isNext) {
     files[`src/routes/index.${cmpExt}`] = { type: 'router' };
   }
 
@@ -63,6 +73,9 @@ export function getStructure(config) {
   } else if (stateManagement === 'redux') {
     files[`src/store/index.${codeExt}`] = { type: 'store', name: 'redux' };
     files[`src/store/slices/counterSlice.${codeExt}`] = { type: 'slice', name: 'counterSlice' };
+    if (isNext) {
+      files[`src/store/StoreProvider.${cmpExt}`] = { type: 'store-provider', name: 'StoreProvider' };
+    }
   } else if (stateManagement === 'context') {
     files[`src/context/ThemeContext.${cmpExt}`] = { type: 'context', name: 'ThemeContext' };
   }
@@ -77,27 +90,30 @@ export function getStructure(config) {
   // ARCHITECTURE 1: FEATURE-BASED / DOMAIN-DRIVEN (Recommended Best Practice)
   // --------------------------------------------------
   if (layout === 'feature') {
-    // Shared global UI components
     addComponent('src/components/ui', 'Button');
     
-    // Shared global layouts
+    // Header/Footer not needed globally if Next.js handles layout templates per page group,
+    // but a global layout container (MainLayout) is still standard practice.
     addComponent('src/layouts', 'MainLayout');
     
-    // Shared global custom hooks, services, and utils
     files[`src/hooks/useToggle.${codeExt}`] = { type: 'hook', name: 'useToggle' };
     files[`src/services/api.${codeExt}`] = { type: 'service', name: 'api' };
     files[`src/utils/formatters.${codeExt}`] = { type: 'util', name: 'formatters' };
 
-    // Page route managers
-    addPage('Home');
-    addPage('Dashboard');
+    // In Next.js, Routing is file-system based (in src/app), but pages can be generated as routes.
+    // We only generate pages in pages/ directory if it's standard React, otherwise we keep them in src/app.
+    if (!isNext) {
+      addPage('Home');
+      addPage('Dashboard');
+    } else {
+      // In Next.js App Router, we map dashboard route: src/app/dashboard/page.tsx
+      files[`src/app/dashboard/page.${cmpExt}`] = { type: 'next-page', name: 'Dashboard' };
+    }
 
-    // Feature Modules: Authentication
     addComponent('src/features/auth/components', 'LoginForm');
     files[`src/features/auth/hooks/useAuth.${codeExt}`] = { type: 'hook', name: 'useAuth' };
     files[`src/features/auth/services/authApi.${codeExt}`] = { type: 'service', name: 'authApi' };
 
-    // Feature Modules: Dashboard / Metrics
     addComponent('src/features/dashboard/components', 'StatsGrid');
     addComponent('src/features/dashboard/components', 'RecentActivity');
   }
@@ -106,12 +122,15 @@ export function getStructure(config) {
   // ARCHITECTURE 2: STANDARD LAYERED (Clean Separation of Technical layers)
   // --------------------------------------------------
   else if (layout === 'layered') {
-    // Global components split by layout vs ui
     addComponent('src/components/ui', 'Button');
     addComponent('src/layouts', 'MainLayout');
     
-    addPage('Home');
-    addPage('Dashboard');
+    if (!isNext) {
+      addPage('Home');
+      addPage('Dashboard');
+    } else {
+      files[`src/app/dashboard/page.${cmpExt}`] = { type: 'next-page', name: 'Dashboard' };
+    }
     
     files[`src/hooks/useAuth.${codeExt}`] = { type: 'hook', name: 'useAuth' };
     files[`src/services/api.${codeExt}`] = { type: 'service', name: 'api' };
@@ -132,8 +151,12 @@ export function getStructure(config) {
     
     addComponent('src/components/templates', 'MainLayout');
 
-    addPage('Home');
-    addPage('Dashboard');
+    if (!isNext) {
+      addPage('Home');
+      addPage('Dashboard');
+    } else {
+      files[`src/app/dashboard/page.${cmpExt}`] = { type: 'next-page', name: 'Dashboard' };
+    }
 
     files[`src/hooks/useToggle.${codeExt}`] = { type: 'hook', name: 'useToggle' };
     files[`src/services/api.${codeExt}`] = { type: 'service', name: 'api' };
@@ -147,7 +170,9 @@ export function getStructure(config) {
     addComponent('src/components', 'Header');
     addComponent('src/components', 'Button');
     
-    addPage('Home');
+    if (!isNext) {
+      addPage('Home');
+    }
     
     files[`src/hooks/useToggle.${codeExt}`] = { type: 'hook', name: 'useToggle' };
     files[`src/utils/helpers.${codeExt}`] = { type: 'util', name: 'helpers' };
