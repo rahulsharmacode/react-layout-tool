@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Layout Tool | Official Developer Documentation</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+              950: '#0c071d',
+            },
+            reactblue: '#61dafb',
+            nextdark: '#000000',
+            darkbg: '#090d16',
+            darkpanel: '#0f172a',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Glassmorphism utilities */
+    .glass {
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glass-light {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+    /* Code and directory structure panels */
+    .code-block {
+      background-color: #0b0f19;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      border-radius: 0.75rem;
+      overflow-x: auto;
+      font-size: 0.875rem;
+    }
+    .file-tree {
+      font-family: 'Fira Code', monospace;
+      white-space: pre;
+      background-color: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #78350f;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+    }
+    .dark .file-tree {
+      background-color: #1e1b13;
+      border-color: #45300f;
+      color: #fde68a;
+    }
+    .detail-toggle {
+      cursor: pointer;
+      color: #8b5cf6;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .boilerplate-content {
+      background-color: #e2e8f0;
+      color: #334155;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .dark .boilerplate-content {
+      background-color: #0f172a;
+      color: #cbd5e1;
+    }
+    /* Hide scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+  <script>
+    // Global drawer toggler
+    window.toggleBoilerplate = function(id) {
+      const content = document.getElementById(id);
+      const button = document.getElementById(`btn-${id}`);
+      if (content.classList.contains("hidden")) {
+        content.classList.remove("hidden");
+        button.textContent = "Hide Boilerplate";
+      } else {
+        content.classList.add("hidden");
+        button.textContent = "View Boilerplate";
+      }
+    };
+
+    // Global copy to clipboard function
+    window.copySnippet = function(btn, targetId) {
+      let codeText = '';
+      if (targetId) {
+        const target = document.getElementById(targetId);
+        codeText = target.innerText || target.textContent;
+      } else {
+        const codeBlock = btn.parentElement.querySelector('pre') || btn.parentElement.querySelector('.boilerplate-content') || btn.parentElement.querySelector('code');
+        if (codeBlock) {
+          codeText = codeBlock.innerText || codeBlock.textContent;
+        }
+      }
+      
+      if (codeText) {
+        navigator.clipboard.writeText(codeText.trim());
+        
+        // Show check icon as feedback
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `
+          <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        `;
+        btn.classList.add('border-emerald-500/50');
+        
+        setTimeout(() => {
+          btn.innerHTML = originalContent;
+          btn.classList.remove('border-emerald-500/50');
+        }, 1800);
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#f8fafc] dark:bg-darkbg text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300">
+
+  <!-- Background Decorative Gradients -->
+  <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+    <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 rounded-full blur-[140px] dark:bg-brand-950/30"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-500/10 rounded-full blur-[140px] dark:bg-brand-900/10"></div>
+  </div>
+
+  <div class="relative z-10 flex flex-col min-h-screen">
+    <!-- TOP NAVIGATION HEADER -->
+    <header class="sticky top-0 z-40 w-full border-b border-slate-200/50 dark:border-slate-800/50 glass-light dark:glass transition-all duration-300">
+      <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <!-- Logo Section -->
+        <div class="flex items-center gap-4">
+          <button id="mobile-menu-btn" class="p-2 -ml-2 text-slate-500 dark:text-slate-400 lg:hidden hover:text-brand-600 transition-colors">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <a href="#" class="flex items-center gap-3 group">
+            <span class="text-2xl font-black font-outfit bg-gradient-to-r from-brand-600 via-indigo-500 to-indigo-600 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+              React Layout Tool
+            </span>
+            <span class="relative flex h-5 w-16">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400/20 opacity-75"></span>
+              <span class="relative inline-flex items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-[10px] font-bold text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60 w-full h-full">
+                v1.0.8
+              </span>
+            </span>
+          </a>
+        </div>
+        
+        <!-- Center/Right Controls -->
+        <div class="flex items-center gap-4">
+          <!-- Copy to Clipboard Pill -->
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 dark:bg-slate-900/85 border border-slate-200/60 dark:border-slate-800/60 rounded-full font-mono text-[11px] text-slate-600 dark:text-slate-400 cursor-pointer hover:border-brand-500 dark:hover:border-brand-500 hover:text-brand-600 dark:hover:text-brand-400 transition-all shadow-sm group"
+               onclick="navigator.clipboard.writeText('npx react-layout-tool'); document.getElementById('copy-toast').classList.remove('opacity-0'); setTimeout(() => document.getElementById('copy-toast').classList.add('opacity-0'), 2000)">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>npx react-layout-tool</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </div>
+
+
+
+          <!-- Theme Toggle -->
+          <button id="theme-toggle" class="p-2 border border-slate-200/80 dark:border-slate-800/80 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/80 transition-all shadow-sm">
+            <svg id="theme-light-icon" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14.25 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+            <svg id="theme-dark-icon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Copy Toast -->
+      <div id="copy-toast" class="absolute top-18 right-8 z-50 bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none border border-slate-800">
+        Copied npx command!
+      </div>
+    </header>
+
+    <!-- CONTENT LAYOUT -->
+    <div class="flex-grow max-w-[90rem] w-full mx-auto flex">
+      <!-- SIDEBAR NAVIGATION -->
+      <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 border-r border-slate-200/80 dark:border-slate-800/80 bg-[#f8fafc] dark:bg-darkbg lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:block transform -translate-x-full lg:translate-x-0 transition-transform duration-300 overflow-y-auto no-scrollbar pt-20 lg:pt-8 pb-12 px-6 shrink-0">
+        <nav class="space-y-8">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">Getting Started</h3>
+            <ul class="space-y-1">
+              <li><a href="#introduction" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Introduction</a></li>
+              <li><a href="#installation" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Installation & CLI</a></li>
+              <li><a href="#app-entry" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Application Entry</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">Layout Architectures</h3>
+            <ul class="space-y-1">
+              <li><a href="#layouts" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Global Layouts</a></li>
+              <li><a href="#features" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Feature-Based (Domain)</a></li>
+              <li><a href="#atomic" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Atomic Design</a></li>
+              <li><a href="#layered" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Layered Structure</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">Core Frameworks</h3>
+            <ul class="space-y-1">
+              <li><a href="#react" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Learn React Best Practices</a></li>
+              <li><a href="#nextjs" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Learn Next.js App Router</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">Integrations</h3>
+            <ul class="space-y-1">
+              <li><a href="#state" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">State Management</a></li>
+              <li><a href="#routing" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Routing Setup</a></li>
+              <li><a href="#configs" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">Configs & Aliasing</a></li>
+              <li><a href="#types" class="nav-link block px-3 py-1.5 text-sm font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">TypeScript Declarations</a></li>
+            </ul>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT VIEW -->
+      <main class="flex-grow px-4 sm:px-6 lg:px-8 py-12 max-w-4xl overflow-hidden flex flex-col justify-between">
+        <div id="content-container" class="space-y-10 transition-all duration-300">
+          <!-- Dynamic Content Loaded Here -->
+        </div>
+
+        <!-- FOOTER CREDITS -->
+        <footer class="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500">
+          <p class="mb-2 text-slate-700 dark:text-slate-300 font-semibold font-outfit text-base">
+            React Layout Tool
+          </p>
+          <p class="mb-4 text-slate-500 dark:text-slate-400">
+            Developed by:
+            <span class="text-brand-600 dark:text-brand-400 font-bold">Rahul Sharma</span>
+          </p>
+          <div class="flex flex-wrap justify-center space-x-6 text-sm">
+            <a href="https://rahulsharma.com.np/" target="_blank" class="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition duration-150 mb-2">
+              Website
+            </a>
+            <a href="https://www.linkedin.com/in/at-rahulsharma/" target="_blank" class="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition duration-150 mb-2">
+              LinkedIn
+            </a>
+            <a href="https://github.com/rahulsharmacode" target="_blank" class="text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition duration-150 mb-2">
+              GitHub
+            </a>
+          </div>
+          <p class="mt-4 text-xs text-slate-400 dark:text-slate-500 max-w-md mx-auto leading-relaxed">
+            React Layout Tool is an open-source development scaffolding CLI tool built to automate folder organization and support framework best practices.
+          </p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Backdrop -->
+  <div id="backdrop" class="fixed inset-0 z-20 bg-slate-900/50 backdrop-blur-sm hidden"></div>
+
+  <!-- DOCUMENTATION DATA SOURCE -->
+  <script>
+    const docsData = {
+      introduction: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Introduction</h1>
+        <p class="text-lg text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Welcome to the <strong>React Layout Tool</strong> documentation portal.
+        </p>
+        <p class="text-slate-605 dark:text-slate-350 leading-relaxed mt-2">
+          This developer portal details standard frontend directory structures, framework best practices, and integration strategies designed to help you construct scale-ready web applications.
+        </p>
+        <div class="mt-8 p-6 bg-brand-50 dark:bg-brand-950/20 border border-brand-100 dark:border-brand-900/50 rounded-xl">
+          <h3 class="font-bold text-brand-800 dark:text-brand-300 text-lg flex items-center gap-2 font-outfit">
+            💡 The Architecture Mission
+          </h3>
+          <p class="text-brand-900/80 dark:text-brand-300/80 text-sm mt-2 leading-relaxed">
+            Frontend code quickly degrades when technical layers (e.g. components, style files) are co-located generically. This tool allows users to scaffold clean, encapsulated architectures (such as domain feature groupings or atomic layout grids) directly on their systems using interactive commands.
+          </p>
+        </div>
+      `,
+      installation: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Installation & Usage</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4">
+          To setup the files on your local drive, run the following command inside your destination project directory:
+        </p>
+        
+        <div class="mt-6 relative group">
+          <button onclick="copySnippet(this)" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 shadow-sm" title="Copy command">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <div class="code-block text-slate-200 font-mono text-sm">npx react-layout-tool</div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">Interactive Options</h2>
+        <div class="overflow-x-auto mt-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-sm text-left">
+            <thead class="bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-semibold">
+              <tr>
+                <th class="px-6 py-3">Option</th>
+                <th class="px-6 py-3">Description</th>
+                <th class="px-6 py-3">Best Practice Choice</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <td class="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">Layout Structure</td>
+                <td class="px-6 py-4">Screaming Architecture, Layered, Atomic, or Minimalist.</td>
+                <td class="px-6 py-4 font-medium text-emerald-600">Feature-based (Domain)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">Language</td>
+                <td class="px-6 py-4">TypeScript (tsx/ts) or JavaScript (jsx/js).</td>
+                <td class="px-6 py-4 font-medium text-emerald-600">TypeScript</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">Styling</td>
+                <td class="px-6 py-4">Tailwind CSS (PostCSS v4 setup), SCSS, or raw CSS.</td>
+                <td class="px-6 py-4 font-medium text-emerald-600">Tailwind CSS</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">State Management</td>
+                <td class="px-6 py-4">Zustand, Redux Toolkit, Context API, or None.</td>
+                <td class="px-6 py-4 font-medium text-emerald-600">Zustand</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">Path Aliases</td>
+                <td class="px-6 py-4">Configures @/* import mapping to src/*.</td>
+                <td class="px-6 py-4 font-medium text-emerald-600">Enabled (Yes)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `,
+      'app-entry': `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Application Entry Points</h1>
+        <p class="text-slate-600 dark:text-slate-355 mt-4 leading-relaxed">
+          A working application requires entry boundaries mapping raw code elements into DOM frames.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">Vite React SPA Entries</h2>
+        <p class="text-slate-600 dark:text-slate-350 text-sm mb-4">
+          For React SPA templates, the following files build and mount your layout context:
+        </p>
+        <div class="space-y-4">
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 relative group shadow-sm">
+            <button onclick="copySnippet(this)" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+            </button>
+            <h4 class="font-bold text-slate-900 dark:text-white text-sm">📄 index.html</h4>
+            <p class="text-xs text-slate-500 mt-1 mb-2 dark:text-slate-400">Mounted in the root directory. Imports Vite compiler script modules.</p>
+            <pre class="mt-3 p-3 bg-slate-950 text-slate-300 rounded-lg text-xs overflow-x-auto font-mono">&lt;div id="root"&gt;&lt;/div&gt;\n&lt;script type="module" src="/src/main.tsx"&gt;&lt;/script&gt;</pre>
+          </div>
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h4 class="font-bold text-slate-900 dark:text-white text-sm">📄 src/main.tsx</h4>
+            <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">Compiles the React DOM tree and mounts the App wrapper container.</p>
+          </div>
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h4 class="font-bold text-slate-900 dark:text-white text-sm">📄 src/App.tsx</h4>
+            <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">Houses global configuration states, style files, routing wrappers, and state providers.</p>
+          </div>
+        </div>
+      `,
+      layouts: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Global Page Layouts</h1>
+        <p class="text-slate-600 dark:text-slate-355 mt-4 leading-relaxed">
+          Layout wrappers control the structural grid frameworks of pages. Keeping page shells separate from visual components ensures design consistency.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">📁 src/layouts/MainLayout.tsx</h2>
+        <p class="text-slate-550 text-sm mb-3 dark:text-slate-400">This layout component acts as a structural shell, rendering layout headers, footers, and page sub-nodes.</p>
+        
+        <div class="bg-white dark:bg-slate-900/35 p-4 rounded-lg shadow-inner mb-4 border border-slate-200 dark:border-slate-800 relative group shadow-sm">
+          <button onclick="copySnippet(this, 'layoutBoilerplate')" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <p class="font-medium text-slate-700 dark:text-slate-300 mb-2 text-sm">MainLayout.tsx</p>
+          <span class="detail-toggle text-sm" id="btn-layoutBoilerplate" onclick="toggleBoilerplate('layoutBoilerplate')">View Boilerplate</span>
+          <pre id="layoutBoilerplate" class="boilerplate-content hidden mt-3 font-mono">
+import React from 'react';
+import Header from '../components/organisms/Header';
+
+export default function MainLayout({ children }) {
+  return (
+    &lt;div className="min-h-screen flex flex-col bg-slate-50"&gt;
+      &lt;Header /&gt;
+      &lt;main className="flex-grow max-w-7xl mx-auto px-4 w-full"&gt;
+        {children}
+      &lt;/main&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+        </div>
+      `,
+      features: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Feature-Based Layout</h1>
+        <p class="text-lg text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Feature-based (domain-driven) layout is the <strong>gold standard</strong> for application scale.
+        </p>
+        <p class="text-slate-600 dark:text-slate-350 mt-2 text-sm leading-relaxed">
+          This layout encapsulates routing modules into specific business domain folders (e.g., Auth, Dashboard) rather than dispersing them across abstract technical directories.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">Folder Tree</h2>
+        <div class="relative group">
+          <button onclick="copySnippet(this)" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy layout tree">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <div class="file-tree">
+src/
+├── features/
+│   ├── auth/              # Encapsulated Auth module
+│   │   ├── components/    ➔ LoginForm.tsx
+│   │   ├── hooks/         ➔ useAuth.ts
+│   │   └── services/      ➔ authApi.ts
+│   └── dashboard/         # Encapsulated Dashboard module
+│       └── components/    ➔ StatsGrid.tsx
+├── components/ui/         # Global shared UI: Button.tsx
+└── services/              # Global API: api.ts</div>
+        </div>
+
+        <div class="mt-8 p-6 bg-indigo-50 dark:bg-slate-900/40 border border-indigo-100 dark:border-indigo-900/30 rounded-xl">
+          <h3 class="font-bold text-indigo-900 dark:text-indigo-300 text-base font-outfit">⭐ Key Advantages</h3>
+          <ul class="list-disc pl-6 space-y-2 mt-2 text-indigo-850 dark:text-indigo-300/80 text-sm">
+            <li><strong>Self-Contained Domains:</strong> Deleting or refactoring a feature only requires modifying its local folder, reducing collision risks.</li>
+            <li><strong>Prevents technical folder clutter:</strong> Prevents global directories from becoming bloated with single-use files.</li>
+          </ul>
+        </div>
+      `,
+      atomic: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Atomic Design Layout</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Atomic Design structures components hierarchically, mimicking basic chemistry structures.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">The Atomic Hierarchy</h2>
+        <div class="space-y-4 text-sm">
+          <div class="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900/35 shadow-sm">
+            <h4 class="font-bold text-slate-900 dark:text-white">⚛️ Atoms (src/components/atoms)</h4>
+            <p class="text-slate-500 text-xs mt-1 dark:text-slate-400">Stateless building blocks that cannot contain other components (e.g. Button, Input, Spinner).</p>
+          </div>
+          <div class="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900/35 shadow-sm">
+            <h4 class="font-bold text-slate-900 dark:text-white">⚛️ Molecules (src/components/molecules)</h4>
+            <p class="text-slate-500 text-xs mt-1 dark:text-slate-400">Simple functional groupings of atoms (e.g. SearchBar = Input + Button).</p>
+          </div>
+          <div class="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900/35 shadow-sm">
+            <h4 class="font-bold text-slate-900 dark:text-white">⚛️ Organisms (src/components/organisms)</h4>
+            <p class="text-slate-500 text-xs mt-1 dark:text-slate-400">Complex UI blocks combining molecules and atoms (e.g. Header bar, Sidebar panels).</p>
+          </div>
+          <div class="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900/35 shadow-sm">
+            <h4 class="font-bold text-slate-900 dark:text-white">⚛️ Templates (src/components/templates)</h4>
+            <p class="text-slate-500 text-xs mt-1 dark:text-slate-400">Structural page frames organizing organisms into layout systems (e.g. MainLayout shell).</p>
+          </div>
+        </div>
+      `,
+      layered: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Standard Layered Architecture</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Organizes modules strictly by technical layers (components, hooks, pages, services).
+        </p>
+        <p class="text-slate-600 dark:text-slate-355 text-sm mt-2">
+          This classic structure is simple to understand for small prototypes but can lead to bloated folders as scale increases.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">Folder Mapping</h2>
+        <div class="relative group">
+          <button onclick="copySnippet(this)" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy tree layout">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <div class="file-tree">
+src/
+├── components/ui/   # Common elements: Button.tsx
+├── layouts/         # Page frames: MainLayout.tsx
+├── hooks/           # Stateful logic hooks: useAuth.ts
+├── pages/           # Page routers: Home.tsx, Dashboard.tsx
+└── services/        # Data controllers: api.ts</div>
+        </div>
+      `,
+      react: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">React SPA Best Practices</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Follow these key practices to build robust React Single Page Applications (SPAs):
+        </p>
+
+        <div class="grid md:grid-cols-2 gap-6 mt-8">
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h3 class="font-bold text-slate-900 dark:text-white text-base font-outfit">🟢 Decouple State Logic</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-2 leading-relaxed">
+              Keep component layers thin. Extract state fetching and state transitions into custom hooks (e.g. <code>src/hooks/</code>), making components purely presentation-oriented.
+            </p>
+          </div>
+          
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h3 class="font-bold text-slate-900 dark:text-white text-base font-outfit">🟢 Centralize Network Requests</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-2 leading-relaxed">
+              Consolidate API calls inside <code>src/services</code>. Keep raw component rendering free of raw URL path coordinates.
+            </p>
+          </div>
+
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h3 class="font-bold text-slate-900 dark:text-white text-base font-outfit">🟢 Safe Path Aliases</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-2 leading-relaxed">
+              Configure absolute import structures to prevent deep nested path calculations (e.g., use <code>@/components</code> instead of <code>../../../../components</code>).
+            </p>
+          </div>
+
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h3 class="font-bold text-slate-900 dark:text-white text-base font-outfit">🟢 Reusable UI Isolation</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-2 leading-relaxed">
+              Place common elements (buttons, dialogs, inputs) inside a global UI component directory. These components should be pure and free of external business states.
+            </p>
+          </div>
+        </div>
+      `,
+      nextjs: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Next.js App Router</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Next.js App Router applications are Server-First by default.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">React Server Components (RSC)</h2>
+        <p class="text-slate-600 dark:text-slate-350 text-sm leading-relaxed">
+          Components in the <code>src/app/</code> directory are server-rendered. 
+          To add state bindings or click events, mark the file boundary with the <code>'use client';</code> directive at the top.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">Store provider client wrapping</h2>
+        <p class="text-slate-600 dark:text-slate-350 text-sm leading-relaxed font-sans mb-3">
+          Global state managers (e.g., Redux Toolkit) rely on Context. Wrap the provider inside a client component before mounting it in your server layout:
+        </p>
+
+        <div class="bg-white dark:bg-slate-900/35 p-4 rounded-lg shadow-inner mb-4 border border-slate-200 dark:border-slate-800 relative group shadow-sm">
+          <button onclick="copySnippet(this, 'nextProviderBoilerplate')" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <p class="font-medium text-slate-750 dark:text-slate-300 mb-2 text-sm">StoreProvider.tsx</p>
+          <span class="detail-toggle text-sm" id="btn-nextProviderBoilerplate" onclick="toggleBoilerplate('nextProviderBoilerplate')">View Boilerplate</span>
+          <pre id="nextProviderBoilerplate" class="boilerplate-content hidden mt-3 font-mono">
+'use client';
+import { Provider } from 'react-redux';
+import { store } from './index';
+
+export default function StoreProvider({ children }) {
+  return &lt;Provider store={store}&gt;{children}&lt;/Provider&gt;;
+}</pre>
+        </div>
+      `,
+      state: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">State Management</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Organize store bindings cleanly based on your application's size and complexity.
+        </p>
+
+        <div class="space-y-6 mt-6">
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 relative group shadow-sm">
+            <button onclick="copySnippet(this, 'zustandBoilerplate')" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+            </button>
+            <h3 class="font-bold text-slate-900 dark:text-white text-base">Zustand (SPA Store)</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-1 mb-3 dark:text-slate-400">Lightweight, hook-based global state. Requires no wrapping providers.</p>
+            <span class="detail-toggle text-sm" id="btn-zustandBoilerplate" onclick="toggleBoilerplate('zustandBoilerplate')">View Boilerplate</span>
+            <pre id="zustandBoilerplate" class="boilerplate-content hidden mt-3 font-mono">
+import { create } from 'zustand';
+export const useAppStore = create((set) => ({
+  count: 0,
+  increment: () => set((state) => ({ count: state.count + 1 })),
+}));</pre>
+          </div>
+
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 relative group shadow-sm">
+            <button onclick="copySnippet(this, 'reduxBoilerplate')" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+            </button>
+            <h3 class="font-bold text-slate-900 dark:text-white text-base">Redux Toolkit (RTK)</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-1 mb-3 dark:text-slate-400">Robust, enterprise-ready state manager with modular state slices.</p>
+            <span class="detail-toggle text-sm" id="btn-reduxBoilerplate" onclick="toggleBoilerplate('reduxBoilerplate')">View Boilerplate</span>
+            <pre id="reduxBoilerplate" class="boilerplate-content hidden mt-3 font-mono">
+import { configureStore } from '@reduxjs/toolkit';
+import counterReducer from './slices/counterSlice';
+export const store = configureStore({
+  reducer: { counter: counterReducer }
+});</pre>
+          </div>
+
+          <div class="p-6 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900/35 shadow-sm">
+            <h3 class="font-bold text-slate-900 dark:text-white text-base">Context API</h3>
+            <p class="text-slate-600 dark:text-slate-350 text-xs mt-1">Built-in React Context. Best for low-frequency state changes (e.g. global themes).</p>
+          </div>
+        </div>
+      `,
+      routing: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Routing Setup</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Declarative routing setups keep navigation links scalable and easy to inspect.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">React Router DOM Configuration</h2>
+        <p class="text-slate-600 dark:text-slate-350 text-sm leading-relaxed mb-3">
+          Standard React setups construct a router config using Vite and <code>createBrowserRouter</code>:
+        </p>
+        
+        <div class="bg-white dark:bg-slate-900/35 p-4 rounded-lg shadow-inner mb-4 border border-slate-200 dark:border-slate-800 relative group shadow-sm">
+          <button onclick="copySnippet(this, 'routerBoilerplate')" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <p class="font-medium text-slate-700 dark:text-slate-300 mb-2 text-sm">src/routes/index.tsx</p>
+          <span class="detail-toggle text-sm" id="btn-routerBoilerplate" onclick="toggleBoilerplate('routerBoilerplate')">View Boilerplate</span>
+          <pre id="routerBoilerplate" class="boilerplate-content hidden mt-3 font-mono">
+import React from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+import Home from '../pages/Home';
+import Dashboard from '../pages/Dashboard';
+
+export const router = createBrowserRouter([
+  { path: '/', element: &lt;Home /&gt; },
+  { path: '/dashboard', element: &lt;Dashboard /&gt; },
+]);</pre>
+        </div>
+        
+        <p class="text-slate-600 dark:text-slate-350 text-sm mt-4 leading-relaxed">
+          The router configurations map paths cleanly to page components, which in turn orchestrate layouts and features.
+        </p>
+      `,
+      configs: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">Configs & Path Aliases</h1>
+        <p class="text-slate-600 dark:text-slate-350 mt-4 leading-relaxed">
+          Path aliasing resolves relative path nesting problems by mapping import targets cleanly.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit font-outfit">Vite Alias Configuration</h2>
+        <p class="text-slate-600 dark:text-slate-350 text-sm leading-relaxed">
+          The layout tool automatically sets up a tsconfig file mapping <code>@/*</code> to <code>src/*</code>.
+          Vite itself is configured inside <code>vite.config.ts</code>:
+        </p>
+        <div class="relative group shadow-sm">
+          <button onclick="copySnippet(this)" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <pre class="mt-4 p-4 bg-slate-950 text-slate-300 rounded-lg text-xs overflow-x-auto font-mono">
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+});</pre>
+        </div>
+      `,
+      types: `
+        <h1 class="text-4xl font-extrabold font-outfit text-slate-900 dark:text-white tracking-tight">TypeScript Declarations</h1>
+        <p class="text-slate-600 dark:text-slate-300 mt-4 leading-relaxed">
+          Central type files promote type safety and clean interfaces across modules.
+        </p>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4 font-outfit">📁 src/types/index.d.ts</h2>
+        <p class="text-slate-600 dark:text-slate-350 text-sm leading-relaxed">
+          Keep shared application interfaces (e.g. API Responses, User configurations) in a central type declaration file. This avoids redundant import statements inside your components.
+        </p>
+        <div class="relative group shadow-sm">
+          <button onclick="copySnippet(this)" class="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 rounded-lg border border-slate-700 transition-all duration-200 opacity-0 group-hover:opacity-100" title="Copy code">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <pre class="mt-4 p-4 bg-slate-950 text-slate-300 rounded-lg text-xs overflow-x-auto font-mono">
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ApiResponse&lt;T = any&gt; {
+  data: T;
+  message?: string;
+  status: number;
+}</pre>
+        </div>
+      `
+    };
+
+    // Human-readable titles mapped to routing hashes
+    const pageTitles = {
+      introduction: "Introduction & Guide Overview",
+      installation: "Installation & Interactive Scaffolding",
+      'app-entry': "Vite SPA & Mounting Entry Points",
+      layouts: "Global Layout Shells (MainLayout)",
+      features: "Feature-Based (Domain Grouping) Architecture",
+      atomic: "Atomic Design Component Hierarchies",
+      layered: "Layered Architectural Separation",
+      react: "React SPA Modular Design Principles",
+      nextjs: "Next.js App Router & Server Components",
+      state: "State Management Store Integrations",
+      routing: "React Routing Configurations (Router DOM)",
+      configs: "Path Aliasing & Absolute Import Scopes",
+      types: "TypeScript declaration namespaces"
+    };
+
+    // Dark mode toggle logic
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const lightIcon = document.getElementById('theme-light-icon');
+    const darkIcon = document.getElementById('theme-dark-icon');
+
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      lightIcon.classList.remove('hidden');
+      darkIcon.classList.add('hidden');
+    } else {
+      document.documentElement.classList.remove('dark');
+      lightIcon.classList.add('hidden');
+      darkIcon.classList.remove('hidden');
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        lightIcon.classList.add('hidden');
+        darkIcon.classList.remove('hidden');
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        lightIcon.classList.remove('hidden');
+        darkIcon.classList.add('hidden');
+      }
+    });
+
+    // Hash routing logic
+    function handleRoute() {
+      const hash = window.location.hash.slice(1) || 'introduction';
+      const contentContainer = document.getElementById('content-container');
+      
+      // Update content
+      if (docsData[hash]) {
+        contentContainer.innerHTML = docsData[hash];
+      } else {
+        contentContainer.innerHTML = docsData['introduction'];
+      }
+
+      // Update active navigation links
+      document.querySelectorAll('.nav-link').forEach(link => {
+        const linkHash = link.getAttribute('href').slice(1);
+        if (linkHash === hash) {
+          link.classList.add('bg-brand-100', 'dark:bg-slate-900', 'text-brand-700', 'dark:text-brand-300');
+          link.classList.remove('text-slate-600', 'dark:text-slate-400');
+        } else {
+          link.classList.remove('bg-brand-100', 'dark:bg-slate-900', 'text-brand-700', 'dark:text-brand-300');
+          link.classList.add('text-slate-600', 'dark:text-slate-400');
+        }
+      });
+      
+      // Auto scroll to top
+      window.scrollTo(0, 0);
+    }
+
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('DOMContentLoaded', handleRoute);
+
+    // Mobile Menu Toggling
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+
+    mobileBtn.addEventListener('click', () => {
+      sidebar.classList.remove('-translate-x-full');
+      backdrop.classList.remove('hidden');
+    });
+
+    backdrop.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      backdrop.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      });
+    });
+
+
+  </script>
+</body>
+</html>

@@ -5,12 +5,34 @@
 
 const tsType = (lang, typeStr) => (lang === 'ts' ? typeStr : '');
 
-const getHeader = (fileName, explanation) => `/**
+const getHeader = (fileName, explanation) => {
+  let topicHash = 'introduction';
+  if (fileName.includes('/app/')) topicHash = 'nextjs';
+  else if (fileName.includes('/layouts/')) topicHash = 'layouts';
+  else if (fileName.includes('/components/ui/')) topicHash = 'components';
+  else if (fileName.includes('/components/')) topicHash = 'components';
+  else if (fileName.includes('/features/')) topicHash = 'features';
+  else if (fileName.includes('/pages/')) topicHash = 'pages';
+  else if (fileName.includes('/hooks/')) topicHash = 'hooks';
+  else if (fileName.includes('/services/')) topicHash = 'services';
+  else if (fileName.includes('/utils/')) topicHash = 'utils';
+  else if (fileName.includes('/store/')) topicHash = 'state';
+  else if (fileName.includes('/context/')) topicHash = 'state';
+  else if (fileName.includes('/routes/')) topicHash = 'routing';
+  else if (fileName.includes('/config/')) topicHash = 'configs';
+  else if (fileName.includes('/types/')) topicHash = 'types';
+  else if (fileName.includes('App.')) topicHash = 'app-entry';
+  else if (fileName.includes('main.')) topicHash = 'app-entry';
+
+  return `/**
  * ${fileName}
  * 
  * 💡 BEST PRACTICE TIP:
  * ${explanation}
+ * 
+ * 📖 Learn more: https://rahulsharma.com.np/npm/react-layout-tool/docs#${topicHash}
  */\n\n`;
+};
 
 export function getAppContent({ language, styling, routing, stateManagement }) {
   const isTS = language === 'ts';
