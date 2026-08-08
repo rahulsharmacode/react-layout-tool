@@ -32,7 +32,15 @@ export function getStructure(config) {
     files['postcss.config.js'] = { type: 'config', name: 'postcss' };
   }
 
-  // 3. BASE ENTRY FILES
+  // 3. PROJECT BUNDLER FILES (Best Practice: Working out of the box)
+  if (isNext) {
+    files['next.config.mjs'] = { type: 'config', name: 'next-config' };
+  } else {
+    files['index.html'] = { type: 'config', name: 'index-html' };
+    files[`vite.config.${codeExt}`] = { type: 'config', name: 'vite-config' };
+  }
+
+  // 4. BASE ENTRY FILES
   const mainStyleExt = styling === 'tailwind' ? 'css' : styling;
   if (isNext) {
     // Next.js App Router Entries
@@ -62,12 +70,12 @@ export function getStructure(config) {
     }
   };
 
-  // 4. ROUTING MODULE (Best Practice: Centralized Routes Setup - React only, Next handles it)
+  // 5. ROUTING MODULE (Best Practice: Centralized Routes Setup - React only, Next handles it)
   if (routing && !isNext) {
     files[`src/routes/index.${cmpExt}`] = { type: 'router' };
   }
 
-  // 5. GLOBAL STATE MANAGEMENT (Best Practice: Unidirectional / Clean Store separation)
+  // 6. GLOBAL STATE MANAGEMENT (Best Practice: Unidirectional / Clean Store separation)
   if (stateManagement === 'zustand') {
     files[`src/store/useAppStore.${codeExt}`] = { type: 'store', name: 'zustand' };
   } else if (stateManagement === 'redux') {
@@ -80,7 +88,7 @@ export function getStructure(config) {
     files[`src/context/ThemeContext.${cmpExt}`] = { type: 'context', name: 'ThemeContext' };
   }
 
-  // 6. GLOBAL CONFIG & TYPES (Best Practice: Environment constants and Type safety)
+  // 7. GLOBAL CONFIG & TYPES (Best Practice: Environment constants and Type safety)
   files[`src/config/constants.${codeExt}`] = { type: 'config', name: 'constants' };
   if (isTS) {
     files[`src/types/index.d.ts`] = { type: 'config', name: 'types' };
@@ -91,22 +99,16 @@ export function getStructure(config) {
   // --------------------------------------------------
   if (layout === 'feature') {
     addComponent('src/components/ui', 'Button');
-    
-    // Header/Footer not needed globally if Next.js handles layout templates per page group,
-    // but a global layout container (MainLayout) is still standard practice.
     addComponent('src/layouts', 'MainLayout');
     
     files[`src/hooks/useToggle.${codeExt}`] = { type: 'hook', name: 'useToggle' };
     files[`src/services/api.${codeExt}`] = { type: 'service', name: 'api' };
     files[`src/utils/formatters.${codeExt}`] = { type: 'util', name: 'formatters' };
 
-    // In Next.js, Routing is file-system based (in src/app), but pages can be generated as routes.
-    // We only generate pages in pages/ directory if it's standard React, otherwise we keep them in src/app.
     if (!isNext) {
       addPage('Home');
       addPage('Dashboard');
     } else {
-      // In Next.js App Router, we map dashboard route: src/app/dashboard/page.tsx
       files[`src/app/dashboard/page.${cmpExt}`] = { type: 'next-page', name: 'Dashboard' };
     }
 

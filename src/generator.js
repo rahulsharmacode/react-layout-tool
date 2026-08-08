@@ -19,6 +19,46 @@ export function generateStructure(config) {
   console.log('\n' + bold(cyan('🚀 React Layout Tool - Scaffold Starting...')));
   console.log(gray('--------------------------------------------------'));
 
+  const pkgPath = path.join(process.cwd(), 'package.json');
+  if (!fs.existsSync(pkgPath)) {
+    console.log(`  ${green('✔')} Created package.json with runner scripts.`);
+    const defaultPkg = {
+      name: config.framework === 'next' ? 'nextjs-project' : 'react-project',
+      private: true,
+      version: '0.1.0',
+      type: config.framework === 'next' ? undefined : 'module',
+      scripts: config.framework === 'next' ? {
+        dev: 'next dev',
+        build: 'next build',
+        start: 'next start',
+        lint: 'next lint'
+      } : {
+        dev: 'vite',
+        build: isTS ? 'tsc && vite build' : 'vite build',
+        preview: 'vite preview'
+      }
+    };
+    fs.writeFileSync(pkgPath, JSON.stringify(defaultPkg, null, 2), 'utf8');
+  } else {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      pkg.scripts = pkg.scripts || {};
+      if (config.framework === 'next') {
+        pkg.scripts['dev'] = pkg.scripts['dev'] || 'next dev';
+        pkg.scripts['build'] = pkg.scripts['build'] || 'next build';
+        pkg.scripts['start'] = pkg.scripts['start'] || 'next start';
+      } else {
+        pkg.scripts['dev'] = pkg.scripts['dev'] || 'vite';
+        pkg.scripts['build'] = pkg.scripts['build'] || (isTS ? 'tsc && vite build' : 'vite build');
+        pkg.scripts['preview'] = pkg.scripts['preview'] || 'vite preview';
+      }
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+      console.log(`  ${green('✔')} Configured runner scripts in package.json.`);
+    } catch (e) {
+      console.error(red(`❌ Failed to update package.json scripts: ${e.message}`));
+    }
+  }
+
   const filesMap = getStructure(config);
   let createdDirs = new Set();
   let createdFilesCount = 0;
@@ -95,6 +135,9 @@ export function generateStructure(config) {
         if (name === 'jsconfig') fileContent = contents.getJsConfig();
         if (name === 'constants') fileContent = contents.getConstantsContent(config);
         if (name === 'types') fileContent = contents.getTypesDeclaration();
+        if (name === 'index-html') fileContent = contents.getIndexHtmlContent(config);
+        if (name === 'vite-config') fileContent = contents.getViteConfigContent(config);
+        if (name === 'next-config') fileContent = contents.getNextConfigContent(config);
         break;
       default:
         fileContent = '';
@@ -164,17 +207,6 @@ function installDependencies(config) {
   const redColor = (str) => `\x1b[31m${str}\x1b[39m`;
   const greenColor = (str) => `\x1b[32m${str}\x1b[39m`;
 
-  // 1. Initialize package.json if not present
-  if (!fs.existsSync(pkgPath)) {
-    console.log(cyanColor(`\n📦 package.json not found. Initializing project using ${pm}...`));
-    const initCmd = pm === 'yarn' ? 'yarn init -y' : `${pm} init -y`;
-    try {
-      execSync(initCmd, { stdio: 'inherit' });
-    } catch (e) {
-      console.error(redColor(`❌ Failed to initialize package.json: ${e.message}`));
-      return;
-    }
-  }
 
   // 2. Read package.json to filter already installed dependencies
   let existingDeps = new Set();
@@ -202,6 +234,9 @@ function installDependencies(config) {
   } else if (config.framework === 'react') {
     if (!existingDeps.has('react')) depsToInstall.push('react');
     if (!existingDeps.has('react-dom')) depsToInstall.push('react-dom');
+    
+    if (!existingDeps.has('vite')) devDepsToInstall.push('vite');
+    if (!existingDeps.has('@vitejs/plugin-react')) devDepsToInstall.push('@vitejs/plugin-react');
     
     if (config.language === 'ts') {
       if (!existingDeps.has('typescript')) devDepsToInstall.push('typescript');

@@ -1196,3 +1196,48 @@ export function getTsconfigNodeConfig() {
 `;
 }
 
+export function getIndexHtmlContent({ language }) {
+  const ext = language === 'ts' ? 'tsx' : 'jsx';
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.${ext}"></script>
+  </body>
+</html>
+`;
+}
+
+export function getViteConfigContent() {
+  return `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+});
+`;
+}
+
+export function getNextConfigContent() {
+  return `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+};
+
+export default nextConfig;
+`;
+}
+
+
